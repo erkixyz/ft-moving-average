@@ -5,6 +5,7 @@ import {
   TIndexBuffer,
   TOptionType,
   TOptValue_number,
+  TOptValue_str,
   TOutputWindow,
   TPenStyle,
   TPriceType,
@@ -17,8 +18,11 @@ export default class MovingAverage extends IndicatorImplementation {
   public MAtype!: TOptValue_number;
   public ApplyToPrice!: TOptValue_number;
   public VShift!: TOptValue_number;
+  public ColorAbove!: TOptValue_str;
+  public ColorBelow!: TOptValue_str;
   // buffers
-  public SSMA!: TIndexBuffer;
+  public MAAbove!: TIndexBuffer;
+  public MABelow!: TIndexBuffer;
   private SMA!: TIndexBuffer;
 
   public Init(): void {
@@ -27,6 +31,8 @@ export default class MovingAverage extends IndicatorImplementation {
     this.MAtype = this.api.createTOptValue_number(E_MAType.SMA);
     this.ApplyToPrice = this.api.createTOptValue_number(TPriceType.CLOSE);
     this.VShift = this.api.createTOptValue_number(0);
+    this.ColorAbove = this.api.createTOptValue_str('#00FF00');
+    this.ColorBelow = this.api.createTOptValue_str('#FF0000');
 
     this.api.RecalculateMeAlways();
     this.api.IndicatorShortName('Moving Average');
@@ -46,15 +52,39 @@ export default class MovingAverage extends IndicatorImplementation {
 
     this.api.RegApplyToPriceOption(this.ApplyToPrice, 'Apply to Price');
 
+    this.api.AddSeparator('Colors');
+
+    this.api.RegOption('Color Above MA', TOptionType.COLOR, this.ColorAbove);
+
+    this.api.RegOption('Color Below MA', TOptionType.COLOR, this.ColorBelow);
+
     this.SMA = this.api.CreateIndexBuffer();
-    this.SSMA = this.api.CreateIndexBuffer();
+    this.MAAbove = this.api.CreateIndexBuffer();
+    this.MABelow = this.api.CreateIndexBuffer();
 
-    this.api.IndicatorBuffers(1);
+    this.api.IndicatorBuffers(2);
 
-    this.api.SetIndexBuffer(0, this.SSMA);
-    this.api.SetIndexLabel(0, 'MA');
-    this.api.SetIndexStyle(0, TDrawStyle.LINE, TPenStyle.SOLID, 3, '#00FF00');
+    this.api.SetIndexBuffer(0, this.MAAbove);
+    this.api.SetIndexLabel(0, 'MA Above');
+    this.api.SetIndexStyle(
+      0,
+      TDrawStyle.LINE,
+      TPenStyle.SOLID,
+      3,
+      this.ColorAbove.value
+    );
     this.api.SetIndexDrawBegin(0, this.Period.value - 1 + this.Shift.value);
+
+    this.api.SetIndexBuffer(1, this.MABelow);
+    this.api.SetIndexLabel(1, 'MA Below');
+    this.api.SetIndexStyle(
+      1,
+      TDrawStyle.LINE,
+      TPenStyle.SOLID,
+      3,
+      this.ColorBelow.value
+    );
+    this.api.SetIndexDrawBegin(1, this.Period.value - 1 + this.Shift.value);
   }
 
   public Calculate(index: number): void {
@@ -73,13 +103,21 @@ export default class MovingAverage extends IndicatorImplementation {
 
     this.SMA.setValue(index, calculatedSMA);
 
-    this.SSMA.setValue(
-      index,
-      calculatedSMA + this.VShift.value * this.api.Point()
-    );
+    const maValue = calculatedSMA + this.VShift.value * this.api.Point();
+
+    // Set value to correct buffer based on close price vs MA
+    const closePrice = this.api.Close(index);
+    if (closePrice >= maValue) {
+      this.MAAbove.setValue(index, maValue);
+      this.MABelow.setValue(index, 0); // Empty value
+    } else {
+      this.MAAbove.setValue(index, 0); // Empty value
+      this.MABelow.setValue(index, maValue);
+    }
   }
 
   public OnParamsChange(): void {
     this.api.SetBufferShift(0, this.Shift.value);
+    this.api.SetBufferShift(1, this.Shift.value);
   }
 }
