@@ -29,44 +29,22 @@ export default class MovingAverage extends IndicatorImplementation {
     this.VShift = this.api.createTOptValue_number(0);
 
     this.api.RecalculateMeAlways();
-    this.api.IndicatorShortName('indicators.movingAverage');
+    this.api.IndicatorShortName('Moving Average');
     this.api.SetOutputWindow(TOutputWindow.CHART_WINDOW);
     this.api.SetEmptyValue(0);
 
     this.api.AddSeparator('Common');
 
-    this.api.RegOption(
-      'indicatorModal.general.generalFields.period',
-      TOptionType.INTEGER,
-      this.Period
-    );
-    this.api.SetOptionRange(
-      'indicatorModal.movingAverage.fields.period',
-      1,
-      Number.MAX_SAFE_INTEGER
-    );
+    this.api.RegOption('Period', TOptionType.INTEGER, this.Period);
+    this.api.SetOptionRange('Period', 1, Number.MAX_SAFE_INTEGER);
 
-    this.api.RegOption(
-      'indicatorModal.movingAverage.fields.hShift',
-      TOptionType.INTEGER,
-      this.Shift
-    );
+    this.api.RegOption('Horizontal Shift', TOptionType.INTEGER, this.Shift);
 
-    this.api.RegOption(
-      'indicatorModal.movingAverage.fields.vShift',
-      TOptionType.INTEGER,
-      this.VShift
-    );
+    this.api.RegOption('Vertical Shift', TOptionType.INTEGER, this.VShift);
 
-    this.api.RegMATypeOption(
-      this.MAtype,
-      'indicatorModal.movingAverage.fields.maType'
-    );
+    this.api.RegMATypeOption(this.MAtype, 'MA Type');
 
-    this.api.RegApplyToPriceOption(
-      this.ApplyToPrice,
-      'indicatorModal.general.applyToPrice'
-    );
+    this.api.RegApplyToPriceOption(this.ApplyToPrice, 'Apply to Price');
 
     this.SMA = this.api.CreateIndexBuffer();
     this.SSMA = this.api.CreateIndexBuffer();
@@ -74,7 +52,7 @@ export default class MovingAverage extends IndicatorImplementation {
     this.api.IndicatorBuffers(1);
 
     this.api.SetIndexBuffer(0, this.SSMA);
-    this.api.SetIndexLabel(0, 'indicatorModal.general.generalFields.ma');
+    this.api.SetIndexLabel(0, 'MA');
     this.api.SetIndexStyle(0, TDrawStyle.LINE, TPenStyle.SOLID, 3, '#00FF00');
     this.api.SetIndexDrawBegin(0, this.Period.value - 1 + this.Shift.value);
   }
