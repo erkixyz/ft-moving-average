@@ -23,6 +23,7 @@ export default class MovingAverage extends IndicatorImplementation {
   // buffers
   public MAAbove!: TIndexBuffer;
   public MABelow!: TIndexBuffer;
+  public Arrow!: TIndexBuffer;
   private SMA!: TIndexBuffer;
 
   public Init(): void {
@@ -61,8 +62,9 @@ export default class MovingAverage extends IndicatorImplementation {
     this.SMA = this.api.CreateIndexBuffer();
     this.MAAbove = this.api.CreateIndexBuffer();
     this.MABelow = this.api.CreateIndexBuffer();
+    this.Arrow = this.api.CreateIndexBuffer();
 
-    this.api.IndicatorBuffers(2);
+    this.api.IndicatorBuffers(3);
 
     this.api.SetIndexBuffer(0, this.MAAbove);
     this.api.SetIndexLabel(0, 'MA Above');
@@ -85,6 +87,10 @@ export default class MovingAverage extends IndicatorImplementation {
       this.ColorBelow.value
     );
     this.api.SetIndexDrawBegin(1, this.Period.value - 1 + this.Shift.value);
+
+    this.api.SetIndexBuffer(2, this.Arrow);
+    this.api.SetIndexLabel(2, 'Current Bar');
+    this.api.SetIndexStyle(2, TDrawStyle.LINE, TPenStyle.SOLID, 8, '#00FFFF');
   }
 
   public Calculate(index: number): void {
@@ -113,6 +119,18 @@ export default class MovingAverage extends IndicatorImplementation {
     } else {
       this.MAAbove.setValue(index, 0); // Empty value
       this.MABelow.setValue(index, maValue);
+    }
+
+    // Show horizontal line above the last (current) bar
+    if (index === 0) {
+      // Draw horizontal line well above the high of current bar (including wick)
+      // Using percentage offset to ensure visibility
+      const highPrice = this.api.High(index);
+      const offset = highPrice * 0.001; // 0.1% above the high
+      const markerHeight = highPrice + offset;
+      this.Arrow.setValue(index, markerHeight);
+    } else {
+      this.Arrow.setValue(index, 0);
     }
   }
 
